@@ -1,6 +1,6 @@
 # ClearCompare
 
-_work in progress, the only reason why it is public is so we can easily clone it from a docker image..._
+_Work in progress, the only reason why it is public is so we can easily clone it from a docker image... If you want to use this in your own research please message us._
 
 Comparisons / benchmarks of different transparent object point cloud completion / pose estimation systems, especially using common household items that have transparency (e.g. plastic bottles).
 
