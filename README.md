@@ -10,3 +10,7 @@ Docker files and preview tools for:
 To be added:
 * ClearGrasp (https://github.com/Shreeyak/cleargrasp)
 * LIT (https://sites.google.com/umich.edu/prolit)
+
+Dataset of household objects with transparency.
+
+Generation tool for locating and replacing missing depth data using scanned models.
