@@ -13,7 +13,7 @@ To be added:
 
 Dataset of household objects with transparency.
 
-Generation tool for locating and replacing missing depth data using scanned models.
+Generation tool for locating and replacing missing depth data using scanned models (with paint applied to their transparent areas).
 
 ## How to use the Docker files
 
