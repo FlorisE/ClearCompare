@@ -15,6 +15,8 @@ Dataset of household objects with transparency.
 
 Generation tool for locating and replacing missing depth data using scanned models (with paint applied to their transparent areas).
 
+Work supported by the Japan Science and Technology Agency (JST) Moonshot project.
+
 ## How to use the Docker files
 
 To use the docker files, navigate to the directory and run `build.sh`. Then if the build is successful run `run.sh`. The docker container should contain everything you need to start the Intel RealSense camera (e.g. `realsense-viewer`) and generate outputs using the specific depth estimator.
