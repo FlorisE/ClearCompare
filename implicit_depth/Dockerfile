@@ -87,3 +87,4 @@ RUN git clone https://github.com/FlorisE/implicit_depth && \
 RUN conda clean -ya
 
 COPY checkpoints checkpoints
+COPY cleargrasp cleargrasp
