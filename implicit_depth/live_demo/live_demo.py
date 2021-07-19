@@ -87,7 +87,7 @@ if __name__ == '__main__':
         idm = utils.depth2rgb(input_depth,
                               min_depth=config.depthVisualization.minDepth,
                               max_depth=config.depthVisualization.maxDepth,
-                              color_mode=cv2.COLORMAP_JET, reverse_scale=True),
+                              color_mode=cv2.COLORMAP_JET, reverse_scale=True)
         grid_image = np.concatenate((color_img, idm), 1)
         cv2.imshow('Live Demo', grid_image)
         keypress = cv2.waitKey(10) & 0xFF
