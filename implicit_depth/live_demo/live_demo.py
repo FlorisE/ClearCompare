@@ -83,7 +83,7 @@ if __name__ == '__main__':
         input_depth = input_depth.astype(np.float32)
 
         # Display results
-        color_img = cv2.cvtColor(color_img, cv2.COLOR_BGR2BGR)
+        color_img = cv2.cvtColor(color_img, cv2.COLOR_RGB2BGR)
         idm = utils.depth2rgb(input_depth,
                               min_depth=config.depthVisualization.minDepth,
                               max_depth=config.depthVisualization.maxDepth,
