@@ -51,6 +51,7 @@ RUN echo "conda activate lidf" >> ~/.bashrc
 RUN conda activate lidf && \
     conda install -y python=$PYTHON_VERSION numpy pyyaml scipy ipython mkl mkl-include ninja cython typing && \
     conda install -y pytorch torchvision cudatoolkit=11.1 -c pytorch -c nvidia && \
+    conda install -y pytorch-scatter -c rusty1s && \
     conda install -c conda-forge -c fvcore fvcore
 
 WORKDIR /workspace
@@ -66,6 +67,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
          librealsense2-dev \
          librealsense2-dbg
 
+ADD https://api.github.com/repos/FlorisE/ClearCompare/git/refs/heads/main clearcompare_version.json
+RUN git clone https://github.com/FlorisE/ClearCompare
+
+RUN cd /workspace/ClearCompare/implicit_depth/live_demo/realsense && \
+    mkdir build && \
+    cd build && \
+    cmake .. && \
+    make
+
 ADD https://api.github.com/repos/FlorisE/implicit_depth/git/refs/heads/main implicit_depth_version.json
 RUN git clone https://github.com/FlorisE/implicit_depth && \
     cd implicit_depth && \
@@ -74,13 +84,6 @@ RUN git clone https://github.com/FlorisE/implicit_depth && \
     pip install torch && \
     pip install -r requirements.txt
 
-RUN cd /workspace/implicit_depth/src/live_demo/realsense && \
-    mkdir build && \
-    cd build && \
-    cmake .. && \
-    make
-
-ADD https://api.github.com/repos/FlorisE/ClearCompare/git/refs/heads/main clearcompare_version.json
-RUN git clone https://github.com/FlorisE/ClearCompare
-
 RUN conda clean -ya
+
+COPY checkpoints checkpoints

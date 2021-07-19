@@ -31,4 +31,4 @@ Docker containers are already mostly separate from the host system, but we still
 
 **How about CUDA?**
 
-We try to maintain separate containers for different versions of CUDA, so as long as you use `nvidia-docker` (https://github.com/NVIDIA/nvidia-docker) and you use a container version compatible with your host driver you should be OK.
+We try to maintain containers for the latest version of CUDA. Use `nvidia-docker` (https://github.com/NVIDIA/nvidia-docker) and make sure your graphics card has the Ampere architecture.
