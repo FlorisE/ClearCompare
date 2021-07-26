@@ -10,6 +10,7 @@ Docker files and preview tools for:
 To be added:
 * ClearGrasp (https://github.com/Shreeyak/cleargrasp)
 * LIT (https://sites.google.com/umich.edu/prolit)
+* KeyPose (https://arxiv.org/abs/1912.02805)
 
 Dataset of household objects with transparency.
 
