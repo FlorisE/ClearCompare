@@ -4,13 +4,13 @@ _Work in progress, the only reason why it is public is so we can easily clone it
 
 Comparisons / benchmarks of different transparent object point cloud completion / pose estimation systems, especially using common household items that have transparency (e.g. plastic bottles).
 
-Docker files and preview tools for:
+Docker files and (live) preview tools for:
 * ClearGrasp (https://github.com/Shreeyak/cleargrasp) - preview tool included
-* implicit\_depth (https://github.com/NVlabs/implicit_depth) - preview tool ported from ClearGrasp
+* implicit\_depth (https://github.com/NVlabs/implicit_depth) - preview tool being ported from ClearGrasp
+* KeyPose (https://arxiv.org/abs/1912.02805) - no preview tool yet
 
 To be added:
 * LIT (https://sites.google.com/umich.edu/prolit)
-* KeyPose (https://arxiv.org/abs/1912.02805)
 
 Potentially more to be added in the future, as this is a very active research field.
 
