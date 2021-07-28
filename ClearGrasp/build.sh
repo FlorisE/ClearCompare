@@ -1,1 +1,1 @@
-sudo docker build -t cleargrasp_cuda114 .
+sudo docker build -t cleargrasp .
