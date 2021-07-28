@@ -12,9 +12,9 @@ To be added:
 * LIT (https://sites.google.com/umich.edu/prolit)
 * KeyPose (https://arxiv.org/abs/1912.02805)
 
-Dataset of household objects with transparency.
+Potentially more to be added in the future, as this is a very active research field.
 
-Generation tool for locating and replacing missing depth data using scanned models (with paint applied to their transparent areas).
+We will also add a dataset of household objects with transparency and a generation tool for locating and replacing missing depth data using scanned models (we will apply paint to their transparent areas to make them scannable).
 
 Work supported by the Japan Science and Technology Agency (JST) Moonshot project.
 
