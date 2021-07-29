@@ -2,7 +2,7 @@
 
 _Work in progress, the only reason why it is public is so we can easily clone it from a docker image... If you want to use this in your own research please message us._
 
-Comparisons / benchmarks of different transparent object point cloud completion / pose estimation systems, especially using common household items that have transparency (e.g. plastic bottles).
+Comparisons / benchmarks of different transparent object point cloud completion / pose estimation methods, especially using common household items that have transparency (e.g. plastic bottles).
 
 Docker files and (live) preview tools for:
 * ClearGrasp (https://github.com/Shreeyak/cleargrasp) - preview tool included out of the box
@@ -11,8 +11,11 @@ Docker files and (live) preview tools for:
 
 To be added:
 * LIT (https://sites.google.com/umich.edu/prolit)
+* Transparent Specular Grasping (https://sites.google.com/view/transparent-specular-grasping)
 
 Potentially more to be added in the future, as this is a very active research field.
+
+Benchmarks will be aimed at simulated and real grasps, with state of the art methods applied on the above methods to translate their output into grasps (where needed).
 
 We will also add a dataset of household objects with transparency and a generation tool for locating and replacing missing depth data using scanned models (we will apply paint to their transparent areas to make them scannable).
 
