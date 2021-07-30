@@ -13,7 +13,7 @@ To be added:
 * LIT (https://sites.google.com/umich.edu/prolit)
 * Transparent Specular Grasping (https://sites.google.com/view/transparent-specular-grasping)
 
-Potentially more to be added in the future, as this is a very active research field. We are mostly focussing on deep learning approaches vs approaches using hardcoded features. While there are some systems that seem to work decently, they often require a known model (or a small set of known models) during execution time.
+Potentially more to be added in the future, as this is a very active research field. We are mostly focussing on deep learning approaches vs approaches using hardcoded features. While there are some non-learning approaches that seem to work decently, they often require a known model (or a small set of known models) during execution time.
 
 Benchmarks will be aimed at simulated and real grasps, with state of the art methods applied on the above methods to translate their output into grasps (where needed).
 
