@@ -13,6 +13,11 @@ To be added:
 * LIT (https://sites.google.com/umich.edu/prolit)
 * Transparent Specular Grasping (https://sites.google.com/view/transparent-specular-grasping)
 
+Some more classical works:
+* Saxena, Driemeyer, and Ng, “Robotic Grasping of Novel Objects Using Vision.” The International Journal of Robotics Research, 2008. (no source code available)
+* Lysenkov and Rabaud, “Pose Estimation of Rigid Transparent Objects in Transparent Clutter.” ICRA 2013. (http://wg-perception.github.io/transparent_objects/)
+
+
 Potentially more to be added in the future, as this is a very active research field. We are mostly focussing on deep learning approaches vs approaches using hardcoded features. While there are some non-learning approaches that seem to work decently, they often require a known model (or a small set of known models) during execution time.
 
 Benchmarks will be aimed at simulated and real grasps, with state of the art methods applied on the above methods to translate their output into grasps (where needed).
