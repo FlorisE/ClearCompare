@@ -33,8 +33,7 @@ RUN apt-get update && \
         libgl1-mesa-dev \
         libglu1-mesa-dev \
         libglfw3-dev \
-        at && \
-    rm -rf /var/lib/apt/lists/*
+        at
 
 ENV PATH /opt/conda/bin:$PATH
 RUN curl -o ~/miniconda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh && \
@@ -84,7 +83,13 @@ RUN git clone https://github.com/FlorisE/implicit_depth && \
     pip install torch && \
     pip install -r requirements.txt
 
+
 RUN conda clean -ya
 
-COPY checkpoints checkpoints
-COPY cleargrasp cleargrasp
+RUN mkdir /dataset
+COPY checkpoints dataset/checkpoints
+
+RUN cd /workspace/ClearCompare/implicit_depth/live_demo/config && \
+    cp config.yaml.sample config.yaml
+
+RUN rm -rf /var/lib/apt/lists/*
