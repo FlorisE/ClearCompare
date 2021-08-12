@@ -38,6 +38,8 @@ sys.path.append(
     os.path.join(os.path.dirname(__file__), '/workspace/implicit_depth/src'))
 import models.pipeline as pipeline # NOQA E402
 from utils.training_utils import restore # NOQA E402
+import utils.data_augmentation as data_augmentation
+
 
 
 def _normalize_depth_img(depth_img, dtype=np.uint8, min_depth=0.0,
@@ -143,8 +145,8 @@ class PredictRefine(object):
             print('Use GPU {} in Node {} for training'.format(
                 self.opt.gpu_id, self.opt.dist.node_rank))
         # set device as local gpu id.
-        torch.cuda.set_device(self.opt.gpu_id)
         self.device = torch.device('cuda:{}'.format(self.opt.gpu_id))
+        torch.cuda.set_device(self.device)
         if self.opt.dist.ddp:
             dist.barrier()
         self.setup_model()
@@ -204,11 +206,64 @@ class PredictRefine(object):
                 find_unused_parameters=True)
             print('DistributedDataParallel at GPU {}'.format(self.opt.gpu_id))
 
+    def run_iteration(self, epoch, iteration, iter_len, exp_type, vis_iter, batch):
+        pred_mask = None
+        success_flag, data_dict, loss_dict = self.lidf(batch, exp_type, epoch, pred_mask)
+        data_dict, loss_dict_refine = self.refine_net(exp_type, epoch, data_dict)
+
     def predict(self, batch, epoch=0):
         with torch.no_grad():
             self.lidf.eval()
             self.refine_net.eval()
             self.run_iteration(epoch, 0, 1, 'predict', 99999, batch)
+
+    def process(self, rgb_img, depth_img, camera_params):
+        scale = (self.opt.dataset.img_width / rgb_img.shape[1], self.opt.dataset.img_height / rgb_img.shape[0])
+        camera_params['fx'] *= scale[0]
+        camera_params['fy'] *= scale[1]
+        camera_params['cx'] *= scale[0]
+        camera_params['cy'] *= scale[1]
+        depth_img[np.isnan(depth_img)] = 0.
+        xyz_corrupt = data_augmentation.compute_xyz(depth_img, camera_params)
+        xyz_corrupt = cv2.resize(xyz_corrupt, (self.opt.dataset.img_width, self.opt.dataset.img_height), interpolation=cv2.INTER_NEAREST)
+        xyz_corrupt = torch.from_numpy(xyz_corrupt).permute(2, 0, 1).float()
+
+        sample = {
+            'rgb': self.process_rgb(rgb_img),
+            'depth': depth_img,
+            'xyz_corrupt': xyz_corrupt,
+            'fx': torch.tensor(camera_params['fx']),
+            'fy': torch.tensor(camera_params['fy']),
+            'cx': torch.tensor(camera_params['cx']),
+            'cy': torch.tensor(camera_params['cy']),
+        }
+        return sample
+
+    def process_rgb(self, rgb_img):
+        rgb_img = cv2.resize(rgb_img, (self.opt.dataset.img_width, self.opt.dataset.img_height), interpolation=cv2.INTER_LINEAR)
+        # BGR to RGB
+        rgb_img = cv2.cvtColor(rgb_img, cv2.COLOR_BGR2RGB)
+        # normalize by mean and std
+        rgb_img = data_augmentation.standardize_image(rgb_img)
+        rgb_img = data_augmentation.array_to_tensor(rgb_img) # Shape: [3 x H x W]
+
+        return rgb_img
+
+    def process_label(self, mask):
+        if len(mask.shape) == 3:
+            mask = mask[:, :, 0]
+        foreground_labels, num_components = connected_components(mask == 255)
+
+        # Find the unique (nonnegative) foreground_labels, map them to {0, ..., K-1}
+        unique_nonnegative_indices = np.unique(foreground_labels)
+        mapped_labels = foreground_labels.copy()
+        for k in range(unique_nonnegative_indices.shape[0]):
+            mapped_labels[foreground_labels == unique_nonnegative_indices[k]] = k
+        foreground_labels = mapped_labels
+
+        foreground_labels = cv2.resize(foreground_labels, (self.params['img_width'], self.params['img_height']), interpolation=cv2.INTER_NEAREST)
+
+        return foreground_labels
 
 
 if __name__ == '__main__':
@@ -224,10 +279,6 @@ if __name__ == '__main__':
     print('Make sure realsense camera is streaming.\n')
     rcamera = camera.Camera()
     camera_intrinsics = rcamera.color_intr
-    realsense_fx = camera_intrinsics[0, 0]
-    realsense_fy = camera_intrinsics[1, 1]
-    realsense_cx = camera_intrinsics[0, 2]
-    realsense_cy = camera_intrinsics[1, 2]
     time.sleep(1)
 
     # Load Config File
@@ -235,6 +286,15 @@ if __name__ == '__main__':
     with open(CONFIG_FILE_PATH) as fd:
         config_yaml = yaml.safe_load(fd)
     config = AttrDict(config_yaml)
+
+    camera_params = {
+        'fx': camera_intrinsics[0, 0],
+        'fy': camera_intrinsics[1, 1],
+        'cx': camera_intrinsics[0, 2],
+        'cy': camera_intrinsics[1, 2],
+        'xres': config.xres,
+        'yres': config.yres
+    }
 
     # Create directory to save captures
     runs = sorted(glob.glob(os.path.join(config.captures_dir, 'exp-*')))
@@ -257,17 +317,24 @@ if __name__ == '__main__':
           termcolor.colored('"{}"'.format(captures_dir), 'blue'))
     print('\n Press "c" to capture and save image, press "q" to quit\n')
 
-    predict = PredictRefine()
+    predict = PredictRefine(config)
 
     while True:
         color_img, input_depth = rcamera.get_data()
+        color_img = cv2.resize(color_img, (config.xres, config.yres))
+        input_depth = cv2.resize(input_depth, (config.xres, config.yres))
         input_depth = input_depth.astype(np.float32)
-
-        batch = {'rgb_image': color_img}
+        color_img = cv2.cvtColor(color_img, cv2.COLOR_RGB2BGR)
+        batch = predict.process(color_img, input_depth, camera_params)
+        batch['rgb'] = np.expand_dims(batch['rgb'], 0)
+        batch['rgb'][0] = 0
+        batch['rgb'] = torch.tensor(batch['rgb'])
+        batch['xyz_corrupt'] = np.expand_dims(batch['xyz_corrupt'], 0)
+        batch['xyz_corrupt'][0] = 0
+        batch['xyz_corrupt'] = torch.tensor(batch['xyz_corrupt']) 
         predict.predict(batch)
 
         # Display results
-        color_img = cv2.cvtColor(color_img, cv2.COLOR_RGB2BGR)
         idm = depth2rgb(input_depth,
                         min_depth=config.depthVisualization.minDepth,
                         max_depth=config.depthVisualization.maxDepth,
