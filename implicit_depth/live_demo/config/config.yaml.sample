@@ -22,9 +22,10 @@ model:
   multires_views: 4
   # decoder
   offdec_type: IEF
+  n_iter: 2
+  probdec_type: IMNET
   imnet_gf: 64
   use_sigmoid: False
-  n_iter: 2
 
 # Values Used for RGB Visualization of depth images.
 depthVisualization:
@@ -32,4 +33,5 @@ depthVisualization:
   maxDepth: 1.5  # meters. Depth more than this value not considered in creating rgb visualization of depth.
 
 loss:
-  prob_loss_type: single
+  prob_loss_type: ray
+  surf_norm_epo: 0

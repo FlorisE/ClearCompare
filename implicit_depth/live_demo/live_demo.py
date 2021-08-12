@@ -177,14 +177,16 @@ if __name__ == '__main__':
           termcolor.colored('"{}"'.format(captures_dir), 'blue'))
     print('\n Press "c" to capture and save image, press "q" to quit\n')
 
-    torch.cuda.set_device(config.gpu_id)
     device = torch.device('cuda:{}'.format(config.gpu_id))
+    torch.cuda.set_device(device)
     model = LIDF(config, device)
     model.eval()
 
     while True:
         color_img, input_depth = rcamera.get_data()
         input_depth = input_depth.astype(np.float32)
+
+        model(color_img, exp_type='val', epoch=0)
 
         # Display results
         color_img = cv2.cvtColor(color_img, cv2.COLOR_RGB2BGR)
