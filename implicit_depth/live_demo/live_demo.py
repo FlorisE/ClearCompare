@@ -10,6 +10,8 @@ import shutil
 import sys
 import time
 
+import torch
+
 from attrdict import AttrDict
 
 # from PIL import Image
@@ -174,6 +176,11 @@ if __name__ == '__main__':
     print('Saving captured images to folder: ' +
           termcolor.colored('"{}"'.format(captures_dir), 'blue'))
     print('\n Press "c" to capture and save image, press "q" to quit\n')
+
+    torch.cuda.set_device(config.gpu_id)
+    device = torch.device('cuda:{}'.format(config.gpu_id))
+    model = LIDF(config, device)
+    model.eval()
 
     while True:
         color_img, input_depth = rcamera.get_data()
