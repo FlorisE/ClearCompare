@@ -4,10 +4,17 @@ _Work in progress, the only reason why it is public is so we can easily clone it
 
 Comparisons / benchmarks of different transparent object point cloud completion / pose estimation methods, especially using common household items that have transparency (e.g. plastic bottles).
 
-Docker files and (live) preview tools for:
-* ClearGrasp (https://github.com/Shreeyak/cleargrasp) - preview tool included out of the box
-* implicit\_depth (https://github.com/NVlabs/implicit_depth) - preview tool being ported from ClearGrasp
-* KeyPose (https://arxiv.org/abs/1912.02805) - no preview tool yet
+Thanks to the authors for their work and for releasing their preprints and code.
+
+| Name            | Output type | Preview tool available | Links |
+| --------------- | ----------- | ---------------------- | ----- |
+| ClearGrasp      | Point Cloud | :heavy_check_mark:     | [:paperclip:](https://sites.google.com/view/cleargrasp) [:notebook:](https://arxiv.org/abs/1910.02550) [:octocat:](https://github.com/Shreeyak/cleargrasp) |
+| implicit\_depth | Point Cloud |                        | [:paperclip:](https://research.nvidia.com/publication/2021-03_RGB-D-Local-Implicit) [:notebook:](https://arxiv.org/abs/2104.00622) [:octocat:](https://github.com/NVlabs/implicit_depth) |
+| KeyPose         | Keypoints   |                        | [:paperclip:](https://sites.google.com/view/keypose) [:notebook:](https://arxiv.org/abs/1912.02805)  [:octocat:](https://github.com/google-research/google-research/tree/master/keypose) |
+
+:paperclip:: Link to project web site
+:notebook:: Link to paper
+:octocat:: Link to GitHub repo
 
 To be added:
 * LIT (https://sites.google.com/umich.edu/prolit)
