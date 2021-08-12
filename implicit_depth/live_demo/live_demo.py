@@ -6,11 +6,14 @@
 import argparse
 import glob
 import os
+import os.path as osp
 import shutil
 import sys
 import time
 
 import torch
+import torch.distributed as dist
+import torch.nn as nn
 
 from attrdict import AttrDict
 
@@ -33,7 +36,8 @@ os.chdir('/workspace/implicit_depth/src')
 
 sys.path.append(
     os.path.join(os.path.dirname(__file__), '/workspace/implicit_depth/src'))
-from models.pipeline import LIDF # NOQA E402
+import models.pipeline as pipeline # NOQA E402
+from utils.training_utils import restore # NOQA E402
 
 
 def _normalize_depth_img(depth_img, dtype=np.uint8, min_depth=0.0,
@@ -131,6 +135,82 @@ def depth2rgb(depth_img, min_depth=0.0, max_depth=1.5,
     return depth_img_mapped
 
 
+class PredictRefine(object):
+    def __init__(self, opt):
+        super(PredictRefine, self).__init__()
+        self.opt = opt
+        if self.opt.dist.ddp:
+            print('Use GPU {} in Node {} for training'.format(
+                self.opt.gpu_id, self.opt.dist.node_rank))
+        # set device as local gpu id.
+        torch.cuda.set_device(self.opt.gpu_id)
+        self.device = torch.device('cuda:{}'.format(self.opt.gpu_id))
+        if self.opt.dist.ddp:
+            dist.barrier()
+        self.setup_model()
+        # sync all processes at the end of init
+        if self.opt.dist.ddp:
+            dist.barrier()
+
+    def setup_model(self):
+        print('===> Building models, GPU {}'.format(self.opt.gpu_id))
+        self.lidf = pipeline.LIDF(self.opt, self.device)
+        self.refine_net = pipeline.RefineNet(self.opt, self.device)
+
+        if self.opt.lidf_ckpt_path is not None and \
+                osp.isfile(self.opt.lidf_ckpt_path):
+            loc = 'cuda:{}'.format(self.opt.gpu_id)
+            checkpoint = torch.load(self.opt.lidf_ckpt_path, map_location=loc)
+            restore(self.lidf.resnet_model, checkpoint['resnet_model'])
+            restore(self.lidf.pnet_model, checkpoint['pnet_model'])
+            restore(self.lidf.offset_dec, checkpoint['offset_dec'])
+            restore(self.lidf.prob_dec, checkpoint['prob_dec'])
+            print('Loaded checkpoint at epoch {} from {}.'.format(
+                checkpoint['epoch'], self.opt.lidf_ckpt_path))
+        else:
+            raise ValueError('LIDF should be pretrained!')
+
+        # freeze lidf
+        for param in self.lidf.parameters():
+            param.requires_grad = False
+
+        # load checkpoint
+        if self.opt.checkpoint_path is not None and \
+                osp.isfile(self.opt.checkpoint_path):
+            loc = 'cuda:{}'.format(self.opt.gpu_id)
+            checkpoint = torch.load(self.opt.checkpoint_path, map_location=loc)
+            restore(self.refine_net.pnet_model,
+                    checkpoint['pnet_model_refine'])
+            restore(self.refine_net.offset_dec,
+                    checkpoint['offset_dec_refine'])
+            print('Loaded checkpoint at epoch {} from {}.'.format(
+                checkpoint['epoch'], self.opt.checkpoint_path))
+        if self.opt.exp_type in ['test'] and self.opt.checkpoint_path is None:
+            raise ValueError('Should identify checkpoint_path for testing!')
+
+        # freeze refine_net
+        for param in self.refine_net.parameters():
+            param.requires_grad = False
+
+        # ddp setting
+        if self.opt.dist.ddp:
+            # batchnorm to syncbatchnorm
+            self.refine_net = nn.SyncBatchNorm.convert_sync_batchnorm(
+                self.refine_net)
+            print('sync batchnorm at GPU {}'.format(self.opt.gpu_id))
+            # distributed data parallel
+            self.refine_net = nn.parallel.DistributedDataParallel(
+                self.refine_net, device_ids=[self.opt.gpu_id],
+                find_unused_parameters=True)
+            print('DistributedDataParallel at GPU {}'.format(self.opt.gpu_id))
+
+    def predict(self, batch, epoch=0):
+        with torch.no_grad():
+            self.lidf.eval()
+            self.refine_net.eval()
+            self.run_iteration(epoch, 0, 1, 'predict', 99999, batch)
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='Run live demo of depth completion on realsense camera')
@@ -177,16 +257,14 @@ if __name__ == '__main__':
           termcolor.colored('"{}"'.format(captures_dir), 'blue'))
     print('\n Press "c" to capture and save image, press "q" to quit\n')
 
-    device = torch.device('cuda:{}'.format(config.gpu_id))
-    torch.cuda.set_device(device)
-    model = LIDF(config, device)
-    model.eval()
+    predict = PredictRefine()
 
     while True:
         color_img, input_depth = rcamera.get_data()
         input_depth = input_depth.astype(np.float32)
 
-        model(color_img, exp_type='val', epoch=0)
+        batch = {'rgb_image': color_img}
+        predict.predict(batch)
 
         # Display results
         color_img = cv2.cvtColor(color_img, cv2.COLOR_RGB2BGR)
