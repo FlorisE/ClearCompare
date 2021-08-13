@@ -32,10 +32,14 @@ import termcolor
 
 import yaml
 
-os.chdir('/workspace/implicit_depth/src')
-
 sys.path.append(
     os.path.join(os.path.dirname(__file__), '/workspace/implicit_depth/src'))
+sys.path.append(
+    os.path.join(os.path.dirname(__file__), '/workspace/ClearCompare/implicit_depth/live_demo/mask_network'))
+from mask_network.modeling import deeplab
+
+os.chdir('/workspace/implicit_depth/src')
+
 import models.pipeline as pipeline # NOQA E402
 from utils.training_utils import restore # NOQA E402
 import utils.data_augmentation as data_augmentation
@@ -316,12 +320,20 @@ if __name__ == '__main__':
     print('Saving captured images to folder: ' +
           termcolor.colored('"{}"'.format(captures_dir), 'blue'))
     print('\n Press "c" to capture and save image, press "q" to quit\n')
+    CHECKPOINT = torch.load(config.masks.pathWeightsFile, map_location='cpu')
+    mask = deeplab.DeepLab(num_classes=config.masks.numClasses, backbone='drn',
+                           sync_bn=True, freeze_bn=True)
+    mask.load_state_dict(CHECKPOINT['model_state_dict'])
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    mask = mask.to(device)
+    mask.eval()
 
     predict = PredictRefine(config)
 
     while True:
         color_img, input_depth = rcamera.get_data()
         color_img = cv2.resize(color_img, (config.xres, config.yres))
+        mask_outputs = mask(color_img)
         input_depth = cv2.resize(input_depth, (config.xres, config.yres))
         input_depth = input_depth.astype(np.float32)
         color_img = cv2.cvtColor(color_img, cv2.COLOR_RGB2BGR)
