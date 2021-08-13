@@ -14,6 +14,8 @@ import time
 import torch
 import torch.distributed as dist
 import torch.nn as nn
+from torchvision import transforms
+from imgaug import augmenters as iaa
 
 from attrdict import AttrDict
 
@@ -221,7 +223,7 @@ class PredictRefine(object):
             self.refine_net.eval()
             self.run_iteration(epoch, 0, 1, 'predict', 99999, batch)
 
-    def process(self, rgb_img, depth_img, camera_params):
+    def process(self, rgb_img, depth_img, camera_params, corrupt_mask):
         scale = (self.opt.dataset.img_width / rgb_img.shape[1], self.opt.dataset.img_height / rgb_img.shape[0])
         camera_params['fx'] *= scale[0]
         camera_params['fy'] *= scale[1]
@@ -229,17 +231,33 @@ class PredictRefine(object):
         camera_params['cy'] *= scale[1]
         depth_img[np.isnan(depth_img)] = 0.
         xyz_corrupt = data_augmentation.compute_xyz(depth_img, camera_params)
-        xyz_corrupt = cv2.resize(xyz_corrupt, (self.opt.dataset.img_width, self.opt.dataset.img_height), interpolation=cv2.INTER_NEAREST)
+        xyz_corrupt = cv2.resize(xyz_corrupt, (self.opt.xres, self.opt.yres), interpolation=cv2.INTER_NEAREST)
         xyz_corrupt = torch.from_numpy(xyz_corrupt).permute(2, 0, 1).float()
+        xyz_img = data_augmentation.compute_xyz(depth_img, camera_params)
+        xyz_img = cv2.resize(xyz_img, (self.opt.xres, self.opt.yres), interpolation=cv2.INTER_NEAREST)
+        xyz_img = torch.from_numpy(xyz_img).permute(2, 0, 1).float()
+        # generate valid mask
+        valid_mask = 1 - corrupt_mask
+        valid_mask[depth_img==0] = 0
+        valid_mask_float = torch.from_numpy(valid_mask).unsqueeze(0).float()
+        valid_mask_label = torch.from_numpy(valid_mask).long()
+        corrupt_mask_float = torch.from_numpy(corrupt_mask).unsqueeze(0).float()
+        corrupt_mask_label = torch.from_numpy(corrupt_mask).long()
 
         sample = {
             'rgb': self.process_rgb(rgb_img),
-            'depth': depth_img,
+            'depth_corrupt': depth_img,
+            'xyz': xyz_img,
             'xyz_corrupt': xyz_corrupt,
             'fx': torch.tensor(camera_params['fx']),
             'fy': torch.tensor(camera_params['fy']),
             'cx': torch.tensor(camera_params['cx']),
             'cy': torch.tensor(camera_params['cy']),
+            'corrupt_mask': corrupt_mask_float,
+            'corrupt_mask_label': corrupt_mask_label,
+            'valid_mask': valid_mask_float,
+            'valid_mask_label': valid_mask_label,
+            'item_path': None
         }
         return sample
 
@@ -333,17 +351,51 @@ if __name__ == '__main__':
     while True:
         color_img, input_depth = rcamera.get_data()
         color_img = cv2.resize(color_img, (config.xres, config.yres))
-        mask_outputs = mask(color_img)
+        transform = iaa.Sequential([
+            iaa.Resize({
+                "height": config.yres,
+                "width": config.xres,
+            }, interpolation='nearest'),
+        ])
+        det_tf = transform.to_deterministic()
+        color_img_aug = det_tf.augment_image(color_img)
+        color_img_array = np.array(color_img_aug)
+        color_img_tensor = transforms.ToTensor()(color_img_array)
+        color_img_tensor = torch.unsqueeze(color_img_tensor, 0)
+        color_img_tensor = color_img_tensor.to(device)
+        with torch.no_grad():
+            mask_outputs = mask(color_img_tensor)
+
+        predictions = torch.max(mask_outputs, 1)[1]
+        predictions = predictions.squeeze(0).cpu().numpy()
+        predicted_mask = np.zeros(predictions.shape, dtype=np.uint8)
+        predicted_mask[predictions == 0] = 255
+        predicted_mask[predictions == 1] = 0
+
+        color_img = cv2.cvtColor(color_img, cv2.COLOR_RGB2BGR)
+
         input_depth = cv2.resize(input_depth, (config.xres, config.yres))
         input_depth = input_depth.astype(np.float32)
-        color_img = cv2.cvtColor(color_img, cv2.COLOR_RGB2BGR)
-        batch = predict.process(color_img, input_depth, camera_params)
+        batch = predict.process(color_img, input_depth, camera_params, predicted_mask)
+        batch['xyz'] = np.expand_dims(batch['xyz'], 0)
+        batch['xyz'][0] = 0
+        batch['xyz'] = torch.tensor(batch['xyz'])
         batch['rgb'] = np.expand_dims(batch['rgb'], 0)
         batch['rgb'][0] = 0
         batch['rgb'] = torch.tensor(batch['rgb'])
         batch['xyz_corrupt'] = np.expand_dims(batch['xyz_corrupt'], 0)
         batch['xyz_corrupt'][0] = 0
         batch['xyz_corrupt'] = torch.tensor(batch['xyz_corrupt']) 
+        batch['depth_corrupt'] = np.expand_dims(batch['depth_corrupt'], 0)
+        batch['depth_corrupt'][0] = 0
+        batch['depth_corrupt'] = torch.tensor(batch['depth_corrupt']) 
+        batch['corrupt_mask'] = np.expand_dims(batch['corrupt_mask'], 0)
+        batch['corrupt_mask'][0] = 0
+        batch['corrupt_mask'] = torch.tensor(batch['corrupt_mask']) 
+        batch['valid_mask'] = np.expand_dims(batch['valid_mask'], 0)
+        batch['valid_mask'][0] = 0
+        batch['valid_mask'] = torch.tensor(batch['valid_mask']) 
+        print(batch['valid_mask'])
         predict.predict(batch)
 
         # Display results
@@ -351,6 +403,7 @@ if __name__ == '__main__':
                         min_depth=config.depthVisualization.minDepth,
                         max_depth=config.depthVisualization.maxDepth,
                         color_mode=cv2.COLORMAP_JET, reverse_scale=True)
+        cv2.imshow('Mask', predicted_mask)
         grid_image = np.concatenate((color_img, idm), 1)
         cv2.imshow('Live Demo', grid_image)
         keypress = cv2.waitKey(10) & 0xFF
