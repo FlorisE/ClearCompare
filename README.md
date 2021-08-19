@@ -2,23 +2,27 @@
 
 _Work in progress, the only reason why it is public is so we can easily clone it from a docker image... If you want to use this in your own research please message us._
 
-Comparisons / benchmarks of different transparent object point cloud completion / pose estimation methods, especially using common household items that have transparency (e.g. plastic bottles).
+Comparisons / benchmarks of different transparent object point cloud completion / pose estimation methods, especially using common household items that have transparency (e.g. plastic bottles). We mostly focus on systems that take as single RGB(D) image as input and provide output in a format that facilitates grasping by a robot. Also we only incorporate works that have open source code released.
 
 Thanks to the authors for their work and for releasing their preprints and code.
 
-| Name            | Output type | Preview tool available | Links |
-| --------------- | ----------- | ---------------------- | ----- |
-| ClearGrasp      | Point Cloud | :heavy_check_mark:     | [:paperclip:](https://sites.google.com/view/cleargrasp) [:notebook:](https://arxiv.org/abs/1910.02550) [:octocat:](https://github.com/Shreeyak/cleargrasp) |
-| implicit\_depth | Point Cloud |                        | [:paperclip:](https://research.nvidia.com/publication/2021-03_RGB-D-Local-Implicit) [:notebook:](https://arxiv.org/abs/2104.00622) [:octocat:](https://github.com/NVlabs/implicit_depth) |
-| KeyPose         | Keypoints   |                        | [:paperclip:](https://sites.google.com/view/keypose) [:notebook:](https://arxiv.org/abs/1912.02805)  [:octocat:](https://github.com/google-research/google-research/tree/master/keypose) |
+| Name            | Input type | Output type | Preview tool available | Links |
+| --------------- | ---------- | ----------- | ---------------------- | ----- |
+| ClearGrasp      | RGBD       | Point Cloud | :heavy_check_mark:     | [:paperclip:](https://sites.google.com/view/cleargrasp) [:notebook:](https://arxiv.org/abs/1910.02550) [:octocat:](https://github.com/Shreeyak/cleargrasp) |
+| implicit\_depth | RGBD       | Point Cloud |                        | [:paperclip:](https://research.nvidia.com/publication/2021-03_RGB-D-Local-Implicit) [:notebook:](https://arxiv.org/abs/2104.00622) [:octocat:](https://github.com/NVlabs/implicit_depth) |
+| KeyPose         | RGBD       | Keypoints   |                        | [:paperclip:](https://sites.google.com/view/keypose) [:notebook:](https://arxiv.org/abs/1912.02805)  [:octocat:](https://github.com/google-research/google-research/tree/master/keypose) |
 
 :paperclip:: Link to project web site
 :notebook:: Link to paper
 :octocat:: Link to GitHub repo
 
 To be added:
-* LIT (https://sites.google.com/umich.edu/prolit)
 * Transparent Specular Grasping (https://sites.google.com/view/transparent-specular-grasping)
+
+Some other recent works that are of interest:
+* LIT (https://sites.google.com/umich.edu/prolit) (dataset available but no source code available)
+* Xu et al., “6DoF Pose Estimation of Transparent Object from a Single RGB-D Image”. Sensors, 2020. (no source code available)
+* Li, Yen and Chandraker: “Through the Looking Glass: Neural 3D Reconstruction of Transparent Shapes”. CVPR 2020. (multi-view reconstruction method, dataset and source code available)
 
 Some more classical works:
 * Saxena, Driemeyer, and Ng, “Robotic Grasping of Novel Objects Using Vision.” The International Journal of Robotics Research, 2008. (no source code available)
