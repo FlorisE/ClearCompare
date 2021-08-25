@@ -16,6 +16,8 @@ Thanks to the authors for their work and for releasing their preprints and code.
 :notebook:: Link to paper
 :octocat:: Link to GitHub repo
 
+For each system we maintain a docker file so it's easy to start and test it. We are also working on creating a preview tool using the Intel RealSense camera for each system, based on the preview team that is part of ClearGrasp.
+
 To be added:
 * Transparent Specular Grasping (https://sites.google.com/view/transparent-specular-grasping)
 
