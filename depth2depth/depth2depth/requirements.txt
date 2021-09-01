@@ -1,0 +1,4 @@
+h5py>=2.10.0
+opencv-python==4.1.1.26
+git+https://github.com/jamesbowman/openexrpython.git
+Pillow>=6.2.0
