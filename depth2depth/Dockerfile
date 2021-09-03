@@ -48,5 +48,7 @@ RUN conda activate depth2depth && \
     cd /workspace/depth2depth && \
     pip install -r requirements.txt
 
+ENV PATH "$PATH:/workspace/depth2depth/bin/x86_64"
+
 # Clean package cache
 RUN rm -rf /var/lib/apt/lists/*
