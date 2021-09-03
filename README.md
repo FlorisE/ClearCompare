@@ -18,6 +18,8 @@ Thanks to the authors for their work and for releasing their preprints and code.
 
 For each system we maintain a docker file so it's easy to start and test it. We are also working on creating a preview tool using the Intel RealSense camera for each system, based on the preview team that is part of ClearGrasp.
 
+We also included a Docker image for depth2depth, which is a point cloud completion system discussed in Zhang and Funkhouser: _Deep Depth Completion of a Single RGB-D Image_, CVPR 2018.
+
 To be added:
 * Transparent Specular Grasping (https://sites.google.com/view/transparent-specular-grasping)
 
